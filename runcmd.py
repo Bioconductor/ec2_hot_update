@@ -5,6 +5,7 @@ import sys
 import os.path
 import subprocess
 import signal
+import time
 
 num_cores = multiprocessing.cpu_count()
 
@@ -19,6 +20,8 @@ if __name__ == '__main__':
     parser.add_argument('-k', '--key', dest='key',
         default="~/.ec2/bioc-default.pem",
         help='full path to private key [default ~/.ec2/bioc-default.pem]')
+    parser.add_argument('-l', '--local', action="store_true",
+        help="run command locally, command is parsed for %%s")
     parser.add_argument("-i") # for ipython hack
     parser.add_argument('-u', '--username', 
         default='ubuntu', help='username to log in as [default ubuntu]')
@@ -34,10 +37,20 @@ if __name__ == '__main__':
         signal.signal(signal.SIGINT, signal.SIG_IGN)
 
     def runcmd(instance, i):
-        cmdargs = ["ssh", "-i", os.path.expanduser(args.key), "-o",
-            "StrictHostKeyChecking=no", "%s@%s" % (args.username, instance),
-            args.command]
-        p = subprocess.Popen(cmdargs, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if args.local:
+            shell = True
+            if "%s" in args.command:
+                command = args.command % instance
+            else:
+                command = args.command
+            cmdargs = [command]
+        else:
+            shell = False
+            cmdargs = ["ssh", "-i", os.path.expanduser(args.key), "-o",
+                "StrictHostKeyChecking=no", "%s@%s" % (args.username, instance),
+                args.command]
+        p = subprocess.Popen(cmdargs, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            shell=shell)
         output, err = p.communicate()
         result = p.returncode
         res = """begin output from %s
@@ -47,8 +60,8 @@ stderr/stdout:
 %s
 """ % (instance, result, output)
         return(res)
-
-    pool = multiprocessing.Pool(num_cores, init_worker)
+    poolsize = min(len(instances), num_cores)
+    pool = multiprocessing.Pool(poolsize, init_worker)
 
     count = 0
     try:
@@ -58,7 +71,9 @@ stderr/stdout:
         pool.terminate()
         sys.exit(1)
 
+
     print "\n\n-------Done sending jobs to pool--------------\n\n"
+    time.sleep(1.2)
     for r in results:
         count = count + 1
         print '\t', r.get()
