@@ -5,7 +5,6 @@ import sys
 import os.path
 import subprocess
 import signal
-import time
 
 num_cores = multiprocessing.cpu_count()
 
@@ -73,7 +72,6 @@ stderr/stdout:
 
 
     print "\n\n-------Done sending jobs to pool--------------\n\n"
-    time.sleep(1.2)
     for r in results:
         count = count + 1
         print '\t', r.get()
