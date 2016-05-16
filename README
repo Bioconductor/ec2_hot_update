@@ -1,0 +1,16 @@
+usage: runcmd.py [-h] [-k KEY] [-l] [-i I] [-u USERNAME] file command
+
+Run a command on some instances
+
+positional arguments:
+  file                  file listing instance hostnames
+  command               quoted command to run on each instance
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -k KEY, --key KEY     full path to private key [default ~/.ec2/bioc-
+                        default.pem]
+  -l, --local           run command locally, command is parsed for %s
+  -i I
+  -u USERNAME, --username USERNAME
+                        username to log in as [default ubuntu]
